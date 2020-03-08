@@ -55,6 +55,12 @@ function mod:metadata()
       strings = { "None", "Ally Immune", "Replace Damage", "Boost From Both Upgrades" }
     }
   )
+  modApi:addGenerationOption(
+    "timeDilation",
+    "Gravity Time Dilation",
+    "If checked, gravity mech can upgrade the gravity well to make an enemy attack last",
+    { enabled = true }
+  )
 end
 
 function mod:init()
@@ -62,6 +68,10 @@ function mod:init()
   self.modApiExt = self:loadScript("modApiExt/modApiExt")
   self.modApiExt:init()
   self:loadScript("skills/judo")
+  self:loadScript("skills/gravity")
+
+  addSprite("combat/icons", "icon_time_glow")
+  addSprite("combat/icons", "icon_notime_glow")
 end
 
 function mod:load(options,version)
@@ -127,6 +137,17 @@ function mod:load(options,version)
     Weapon_Texts.Prime_Shift_Description = "Grab a unit and toss it behind you. Apply both upgrades to increase throw range by 1."
   else
     Weapon_Texts.Prime_Shift_Description = "Grab a unit and toss it behind you."
+  end
+
+  -- upgrade gravwell upgrade number
+  for _, weapon in pairs({"Science_Gravwell", "Science_Gravwell_A"}) do
+    if options.timeDilation.enabled then
+      _G[weapon].Upgrades = 1
+      _G[weapon].UpgradeCost = {1}
+    else
+      _G[weapon].Upgrades = 0
+      _G[weapon].UpgradeCost = {}
+    end
   end
 end
 
