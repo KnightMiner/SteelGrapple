@@ -10,7 +10,7 @@ Prime_Shift = Skill:new{
   -- upgrades
 	PowerCost = 0,
 	Upgrades = 2,
-	UpgradeCost = {1,3},
+	UpgradeCost = {2,3},
   -- overrides
 	Damage = 1,
 	Range = 1,
@@ -108,10 +108,10 @@ Prime_Shift_AB_Both = Prime_Shift_A_Master:new{
 	RangeBoost = 1
 }
 
--- default upgrades: both boosts range
-Prime_Shift_A = Prime_Shift_A_Friendly
+-- default upgrades: judo master
+Prime_Shift_A = Prime_Shift_A_Master
 Prime_Shift_B = Prime_Shift_B_Damage
-Prime_Shift_AB = Prime_Shift_AB_Both
+Prime_Shift_AB = Prime_Shift_AB_Master
 
 -- targets landing instead of units
 function Prime_Shift:GetTargetArea(point)

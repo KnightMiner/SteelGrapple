@@ -50,7 +50,7 @@ function mod:metadata()
     "Judo Range Upgrade",
     "Determines how the judo mech can upgrade range.",
     {
-      value = "both", -- default
+      value = "ally", -- default
       values = { "none", "ally", "damage", "both" },
       strings = { "None", "Ally Immune", "Replace Damage", "Boost From Both Upgrades" }
     }
