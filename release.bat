@@ -1,9 +1,9 @@
 @echo off
 
 IF EXIST build RMDIR /q /s build
-IF EXIST SteelGrapple-#.#.#.zip" DEL SteelGrapple-#.#.#.zip"
+IF EXIST "SteelGrapple-#.#.#.zip" DEL "SteelGrapple-#.#.#.zip"
 MKDIR build
-MKDIR build\PerfectedIslandReward
+MKDIR build\SteelGrapple
 
 REM Copy required files into build directory
 XCOPY img build\SteelGrapple\img /s /e /i
