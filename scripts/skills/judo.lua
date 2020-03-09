@@ -191,7 +191,7 @@ function Prime_Shift:GetSkillEffect(p1, p2)
 	if Board:IsPawnSpace(p2) or Board:GetTerrain(p2) == TERRAIN_MOUNTAIN then
 		target = p2
 		local offset = DIR_VECTORS[dir]
-		for i = 1, self.Range do
+		for i = 1, (mod.judoBaseRange + self.RangeBoost) do
 			local point = p1 - offset * i
 			if not Board:IsBlocked(point, PATH_FLYER) then
 				landing = point
