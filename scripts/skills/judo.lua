@@ -202,6 +202,7 @@ function Prime_Shift:GetSkillEffect(p1, p2)
 		ret:AddScript(string.format("Prime_Shift:AddRock(%s)", target:GetString()))
 		ret:AddLeap(move, FULL_DELAY)
 		ret:AddBounce(landing, 3)
+		ret:AddSound("/impact/dynamic/rock")
 
 		-- add a fake rock for the preview
 		local fakeRock = SpaceDamage(landing, 0)
