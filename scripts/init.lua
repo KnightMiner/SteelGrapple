@@ -4,8 +4,12 @@ local mod = {
   version = "0.0.1",
   requirements = {},
   icon = "img/icon.png",
-  rockThrow = true
+  rockThrow = true,
+  judoBaseRange = 1,
 }
+
+--- Options for prime shift, will be set based on config
+local judo_shift_options
 
 --[[--
   Adds a sprite to the game
@@ -46,13 +50,23 @@ function mod:metadata()
     }
   )
   modApi:addGenerationOption(
-    "replaceUpgrade",
-    "Judo Range Upgrade",
-    "Determines how the judo mech can upgrade range.",
+    "judoUpgradeA",
+    "Judo First Upgrade",
+    "Determines the first upgrade for the judo mech.",
     {
       value = "ally", -- default
-      values = { "none", "ally", "damage", "both" },
-      strings = { "None", "Ally Immune", "Replace Damage", "Boost From Both Upgrades" }
+      values = { "ally", "range", "master" },
+      strings = { "Ally Immune (vanilla)", "+1 Range", "Judo Master" }
+    }
+  )
+  modApi:addGenerationOption(
+    "judoUpgradeB",
+    "Judo Second Upgrade",
+    "Determines the second upgrade for the judo mech.",
+    {
+      value = "damage", -- default
+      values = { "damage", "range", "strength" },
+      strings = { "+2 Damage (vanilla)", "+2 Range", "Strength" }
     }
   )
   modApi:addGenerationOption(
@@ -67,7 +81,7 @@ function mod:init()
   self:loadScript("weaponPreview/api")
   self.modApiExt = self:loadScript("modApiExt/modApiExt")
   self.modApiExt:init()
-  self:loadScript("skills/judo")
+  judo_shift_options = self:loadScript("skills/judo")
   self:loadScript("skills/gravity")
 
   addSprite("combat/icons", "icon_time_glow")
@@ -82,62 +96,45 @@ function mod:load(options,version)
   -- rock throw
   self.rockThrow = options.rockThrow.enabled
   local image = self.rockThrow and "Mountain" or "Normal"
-  for _, weapon in pairs({"Prime_Shift", "Prime_Shift_B"}) do
-    _G[weapon].TipImage = _G[weapon].TipImages[image]
+  Prime_Shift.TipImage = Prime_Shift.TipImages[image]
+
+  -- judo base range
+  self.judoBaseRange = options.judoBaseRange.value
+
+  -- judo mech upgrades
+  local upgrades = {
+    A = shallow_copy(judo_shift_options.A[options.judoUpgradeA.value]),
+    B = shallow_copy(judo_shift_options.B[options.judoUpgradeB.value])
+  }
+  -- set mountain tips if relevant
+  for _, upgrade in pairs(upgrades) do
+    if upgrade.TipImages then
+      upgrade.TipImage = upgrade.TipImages[image]
+    end
   end
 
-  -- judo base range, need to set all options
-  local baseRange = options.judoBaseRange.value
-  for _, weapon in pairs({
-    "Prime_Shift",
-    "Prime_Shift_A_Friendly", "Prime_Shift_A_Master",
-    "Prime_Shift_B_Damage",   "Prime_Shift_B_Range",
-    "Prime_Shift_AB_Base",    "Prime_Shift_AB_Master",
-    "Prime_Shift_AB_Range",   "Prime_Shift_AB_Both"
-  }) do
-    _G[weapon].Range = baseRange + _G[weapon].RangeBoost
+  -- create actual upgrades
+  -- both A and B may boost range, so add if thats the case
+  upgrades.AB = shallow_copy(upgrades.A)
+  if upgrades.A.RangeBoost and upgrades.B.RangeBoost then
+    upgrades.AB.RangeBoost = upgrades.A.RangeBoost + upgrades.B.RangeBoost
   end
+  Prime_Shift_A  = Prime_Shift:new(upgrades.A)
+  Prime_Shift_B  = Prime_Shift:new(upgrades.B)
+  Prime_Shift_AB = Prime_Shift_B:new(upgrades.AB)
 
-  -- judo range upgrade choice
-  local replaceUpgrade = options.replaceUpgrade.value
-  -- ally means we replace ally immune with judo master
-  if replaceUpgrade == "ally" then
-    Prime_Shift_A = Prime_Shift_A_Master
-    Prime_Shift_AB = Prime_Shift_AB_Master
+  -- upgrade costs
+  if options.judoUpgradeA.value == "master" then
     Prime_Shift.UpgradeCost[1] = 2
-    Weapon_Texts.Prime_Shift_Upgrade1 = "Judo Master"
-    Weapon_Texts.Prime_Shift_A_UpgradeDescription = "Deals no damage to allies and boosts throw range by 1."
   else
-    Prime_Shift_A = Prime_Shift_A_Friendly
     Prime_Shift.UpgradeCost[1] = 1
-    Weapon_Texts.Prime_Shift_Upgrade1 = "Ally Immune"
-    Weapon_Texts.Prime_Shift_A_UpgradeDescription = "Deals no damage to allies."
   end
 
-  -- damage means we replace damage with range
-  if replaceUpgrade == "damage" then
-    Prime_Shift_B = Prime_Shift_B_Range
-    Prime_Shift_AB = Prime_Shift_AB_Range
-    Weapon_Texts.Prime_Shift_Upgrade2 = "+2 Range"
-    Weapon_Texts.Prime_Shift_B_UpgradeDescription = "Increases throw range by 2."
-  else
-    Prime_Shift_B = Prime_Shift_B_Damage
-    Weapon_Texts.Prime_Shift_Upgrade2 = "+2 Damage"
-    Weapon_Texts.Prime_Shift_B_UpgradeDescription = "Increases damage by 2."
-  end
-
-  -- none is vanilla behavior
-  if replaceUpgrade == "none" then
-    Prime_Shift_AB = Prime_Shift_AB_Base
-  end
-
-  -- both gives a range boost when both are upgraded
-  if replaceUpgrade == "both" then
-    Prime_Shift_AB = Prime_Shift_AB_Both
-    Weapon_Texts.Prime_Shift_Description = "Grab a unit and toss it behind you. Apply both upgrades to increase throw range by 1."
-  else
-    Weapon_Texts.Prime_Shift_Description = "Grab a unit and toss it behind you."
-  end
+  -- set texts
+  Weapon_Texts.Prime_Shift_Upgrade1 = upgrades.A.UpgradeName
+  Weapon_Texts.Prime_Shift_Upgrade2 = upgrades.B.UpgradeName
+  Weapon_Texts.Prime_Shift_A_UpgradeDescription = upgrades.A.UpgradeDescription
+  Weapon_Texts.Prime_Shift_B_UpgradeDescription = upgrades.B.UpgradeDescription
 
   -- upgrade gravwell upgrade number
   for _, weapon in pairs({"Science_Gravwell", "Science_Gravwell_A"}) do

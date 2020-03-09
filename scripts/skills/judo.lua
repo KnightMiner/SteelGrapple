@@ -10,10 +10,9 @@ Prime_Shift = Skill:new{
   -- upgrades
 	PowerCost = 0,
 	Upgrades = 2,
-	UpgradeCost = {2,3},
+	UpgradeCost = {1,3},
   -- overrides
 	Damage = 1,
-	Range = 1,
   FriendlyDamage = true,
 	RangeBoost = 0,
   -- display
@@ -36,82 +35,95 @@ Prime_Shift = Skill:new{
 }
 Prime_Shift.TipImage = Prime_Shift.TipImage.Mountain
 
--- Upgrade 1a: ally immune
-Prime_Shift_A_Friendly = Prime_Shift:new{
+--- Tooltip for a mountain with range
+local MOUNTAIN_RANGE = {
+	Mountain = {
+		Unit          = Point(2,2),
+		Enemy         = Point(2,1),
+		Target        = Point(2,4),
+		Mountain      = Point(1,2),
+		Second_Origin = Point(2,2),
+		Second_Target = Point(1,2)
+	},
+	Normal = {
+		Unit   = Point(2,2),
+		Enemy  = Point(2,1),
+		Target = Point(2,4)
+	}
+}
+
+--- Table of options to swap for config
+--- these are not full classes, but will be used to build classes on load
+local shift_options = {
+	A = {},
+	B = {}
+}
+
+-- upgrade A: ally immune
+shift_options.A.ally = {
+	UpgradeName = "Ally Immune",
+	UpgradeDescription = "Deals no damage to allies.",
 	FriendlyDamage = false,
 	TipImage = {
 		Unit          = Point(2,2),
 		Friendly      = Point(2,1),
 		Enemy         = Point(3,2),
-		Target        = Point(2,1),
+		Target        = Point(2,3),
 		Second_Origin = Point(2,2),
 		Second_Target = Point(1,2),
 	}
 }
--- Upgrade 1b: ally immune with range
-Prime_Shift_A_Master = Prime_Shift:new{
-	FriendlyDamage = false,
-	Range = 2,
+
+-- Upgrade A: judo master
+shift_options.A.range = {
+	UpgradeName = "+1 Range",
+	UpgradeDescription = "Increases range by 1.",
 	RangeBoost = 1,
+	TipImages = MOUNTAIN_RANGE
+}
+
+-- Upgrade A: judo master
+shift_options.A.master = {
+	UpgradeName = "Judo Master",
+	UpgradeDescription = "Deals no damage to allies and increases range by 1.",
+	RangeBoost = 1,
+	FriendlyDamage = false,
 	TipImage = {
 		Unit          = Point(2,2),
 		Friendly      = Point(2,1),
 		Enemy         = Point(3,2),
-		Target        = Point(2,1),
+		Target        = Point(2,4),
 		Second_Origin = Point(2,2),
-		Second_Target = Point(0,2),
+		Second_Target = Point(1,2),
 	}
 }
 
--- Upgrade 2a: damage
-Prime_Shift_B_Damage = Prime_Shift:new{
+-- Upgrade B: +2 damage (vanilla)
+shift_options.B.damage = {
+	UpgradeName = "+2 Damage",
+	UpgradeDescription = "Increases damage by 2.",
 	Damage = 3
 }
--- Upgrade 2b: range
-Prime_Shift_B_Range = Prime_Shift:new{
-	Range = 3,
+-- Upgrade B: +2 range
+shift_options.B.range = {
+	UpgradeName = "+2 Range",
+	UpgradeDescription = "Increases range by 2.",
 	RangeBoost = 2,
-	TipImages = {
-		Mountain = {
-			Unit          = Point(2,2),
-			Enemy         = Point(2,1),
-			Target        = Point(2,4),
-			Mountain      = Point(1,2),
-			Second_Origin = Point(2,2),
-			Second_Target = Point(1,2)
-		},
-		Normal = {
-			Unit   = Point(2,2),
-			Enemy  = Point(2,1),
-			Target = Point(2,4)
-		}
-	}
+	TipImages = MOUNTAIN_RANGE
+}
+-- Upgrade B: strength
+shift_options.B.strength = {
+	UpgradeName = "Strength",
+	UpgradeDescription = "Increases damage and range by 1.",
+	RangeBoost = 1,
+	Damage = 2,
+	TipImages = MOUNTAIN_RANGE
 }
 
--- Both upgrades: vanilla
-Prime_Shift_AB_Base = Prime_Shift_A_Friendly:new{
-	Damage = 3
-}
--- both upgrades: master
-Prime_Shift_AB_Master = Prime_Shift_A_Master:new{
-	Damage = 3
-}
--- both upgraes: range
-Prime_Shift_AB_Range = Prime_Shift_A_Master:new{
-	Range = 3,
-	RangeBoost = 2
-}
--- both upgrades: both boost
-Prime_Shift_AB_Both = Prime_Shift_A_Master:new{
-	Damage = 3,
-	Range = 2,
-	RangeBoost = 1
-}
-
--- default upgrades: judo master
-Prime_Shift_A = Prime_Shift_A_Master
-Prime_Shift_B = Prime_Shift_B_Damage
-Prime_Shift_AB = Prime_Shift_AB_Master
+-- default upgrades: TODO
+Prime_Shift_A = Prime_Shift:new(shift_options.A.ally)
+Prime_Shift_B = Prime_Shift:new(shift_options.B.damage)
+Prime_Shift_AB = Prime_Shift_B:new(shift_options.A.ally)
 
 -- targets landing instead of units
 function Prime_Shift:GetTargetArea(point)
@@ -124,7 +136,7 @@ function Prime_Shift:GetTargetArea(point)
         or mod.rockThrow and Board:GetTerrain(target) == TERRAIN_MOUNTAIN then
       -- can land on spaces behind the mech that are open
 			local canTarget = false
-      for i = 1, self.Range do
+      for i = 1, (mod.judoBaseRange + self.RangeBoost) do
         local landing = point - side * i
         if not Board:IsBlocked(landing, PATH_FLYER) then
           ret:push_back(landing)
@@ -223,3 +235,5 @@ function Prime_Shift:GetSkillEffect(p1, p2)
 
 	return ret
 end
+
+return shift_options
