@@ -292,13 +292,19 @@ function modApiExtHooks:updateTiles()
 	if Board then
 		if not GAME.trackedPods then GAME.trackedPods = {} end
 
-		local mtile = mouseTile()
-		if modApiExt_internal.currentTile ~= mtile then
+		local mTile, mTileDir = mouseTileAndEdge()
+
+		if modApiExt_internal.currentTileDirection ~= mTileDir then
+			modApiExt_internal.fireTileDirectionChangedHooks(mission, mTile, mTileDir)
+			modApiExt_internal.currentTileDirection = mTileDir
+		end
+
+		if modApiExt_internal.currentTile ~= mTile then
 			if modApiExt_internal.currentTile then -- could be nil
 				modApiExt_internal.fireTileUnhighlightedHooks(mission, modApiExt_internal.currentTile)
 			end
 
-			modApiExt_internal.currentTile = mtile
+			modApiExt_internal.currentTile = mTile
 
 			if modApiExt_internal.currentTile then -- could be nil
 				modApiExt_internal.fireTileHighlightedHooks(mission, modApiExt_internal.currentTile)
@@ -426,7 +432,7 @@ local function modApiExtGetSkillEffect(self, p1, p2, parentSkill, ...)
 			-- This seems to be used only for constructing weapon previews
 			-- for enemies, so even if this is wrong (it shouldn't), it
 			-- should be pretty harmless.
-		--	Pawn = Board:GetPawn(p1)
+			Pawn = Board:GetPawn(p1)
 		end
 
 		modApiExt_internal.fireSkillBuildHooks(
@@ -553,7 +559,7 @@ modApiExtHooks.missionUpdate = function(mission)
 	-- the missionUpdate hook.
 	-- Set it here, in case we load into a game in progress (missionStart
 	-- is not executed then)
-	if not modApiExt_internal.mission and mission then
+	if mission then
 		modApiExt_internal.mission = mission
 	end
 	if Board and not Board.gameBoard then
