@@ -10,6 +10,7 @@ local mod = {
 
 --- Options for prime shift, will be set based on config
 local judo_shift_options
+local gravwellA
 
 --[[--
   Helper function to load mod scripts
@@ -62,14 +63,22 @@ function mod:metadata()
     "If checked, gravity mech can upgrade the gravity well to make an enemy attack last",
     { enabled = true }
   )
+  modApi:addGenerationOption(
+    "directionalShot",
+    "Gravity Directional Upgrade",
+    "If checked, gravity mech can upgrade the gravity well to allow pushing instead of just pulling",
+    { enabled = true }
+  )
 end
 
 function mod:init()
   self:loadScript("weaponPreview/api")
   self.modApiExt = self:loadScript("modApiExt/modApiExt")
   self.modApiExt:init()
+  -- judo script returns upgrade option tables
   judo_shift_options = self:loadScript("skills/judo")
-  self:loadScript("skills/gravity")
+  -- gravwell script returns default A upgrade, config may overwrite it
+  gravwellA = self:loadScript("skills/gravity")
 
   -- sprites
   local sprites = self:loadScript("libs/sprites")
@@ -125,16 +134,25 @@ function mod:load(options,version)
   Weapon_Texts.Prime_Shift_A_UpgradeDescription = upgrades.A.UpgradeDescription
   Weapon_Texts.Prime_Shift_B_UpgradeDescription = upgrades.B.UpgradeDescription
 
-  -- upgrade gravwell upgrade number
-  for _, weapon in pairs({"Science_Gravwell", "Science_Gravwell_A"}) do
-    if options.timeDilation.enabled then
-      _G[weapon].Upgrades = 1
-      _G[weapon].UpgradeCost = {1}
-    else
-      _G[weapon].Upgrades = 0
-      _G[weapon].UpgradeCost = {}
-    end
+
+  --[[ Gravity Mech ]]--
+
+  local gravTime = not options.timeDilation or options.timeDilation.enabled
+  local gravDir = not options.directionalShot or options.directionalShot.enabled
+  -- if time is enabled, restore upgrade A
+  if gravTime then
+    Science_Gravwell_A = gravwellA
+    Science_Gravwell.UpgradeCost[1] = 1
+  -- if directional and not time, replace upgrade A
+  elseif gravDir then
+    Science_Gravwell_A = Science_Gravwell_B
+    Science_Gravwell.UpgradeCost[1] = 2
   end
+  -- upgrade count based on how many enabled
+  Science_Gravwell.Upgrades = (gravTime and 1 or 0) + (gravDir and 1 or 0)
+  -- correct weapon texts
+  Weapon_Texts.Science_Gravwell_Upgrade1 = Science_Gravwell_A.UpgradeName
+  Weapon_Texts.Science_Gravwell_A_UpgradeDescription = Science_Gravwell_A.UpgradeDescription
 end
 
 return mod
