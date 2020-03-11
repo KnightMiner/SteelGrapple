@@ -10,17 +10,6 @@ modApi:addWeapon_Texts({
   Science_Gravwell_A_UpgradeDescription = "Makes the targeted enemy attack last"
 })
 
-ANIMS.steel_time_icon = Animation:new{
-	Image = "combat/icons/icon_time_glow.png",
-	PosX = -10,
-	PosY = 22
-}
-
-ANIMS.steel_notime_icon = Animation:new{
-	Image = "combat/icons/icon_notime_glow.png",
-	PosX = -10,
-	PosY = 22
-}
 
 function Science_Gravwell_A:Dilation(point)
   if Board:IsPawnSpace(point) and Board:IsPawnTeam(point, TEAM_ENEMY) then

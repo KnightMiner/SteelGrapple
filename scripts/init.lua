@@ -12,19 +12,6 @@ local mod = {
 local judo_shift_options
 
 --[[--
-  Adds a sprite to the game
-
-  @param path      Base sprite path
-  @param filename  File to add
-]]
-function addSprite(path, filename)
-  modApi:appendAsset(
-    string.format("img/%s/%s.png", path, filename),
-    string.format("%simg/%s/%s.png", mod.resourcePath, path, filename)
-  )
-end
-
---[[--
   Helper function to load mod scripts
 
   @param  name   Script path relative to mod directory
@@ -84,8 +71,10 @@ function mod:init()
   judo_shift_options = self:loadScript("skills/judo")
   self:loadScript("skills/gravity")
 
-  addSprite("combat/icons", "icon_time_glow")
-  addSprite("combat/icons", "icon_notime_glow")
+  -- sprites
+  local sprites = self:loadScript("libs/sprites")
+  sprites.addAnimation("combat/icons", "steel_time_icon",   {PosX = -10, PosY = 22})
+  sprites.addAnimation("combat/icons", "steel_notime_icon", {PosX = -10, PosY = 22})
 end
 
 function mod:load(options,version)
