@@ -6,6 +6,7 @@ local mod = {
   icon = "img/icon.png",
   rockThrow = true,
   judoBaseRange = 1,
+  enableConfuseMech = true
 }
 
 --- Options for prime shift, will be set based on config
@@ -69,6 +70,12 @@ function mod:metadata()
     "If checked, gravity mech can upgrade the gravity well to allow pushing instead of just pulling",
     { enabled = true }
   )
+  modApi:addGenerationOption(
+    "confuseMech",
+    "Confuse Mech",
+    "If checked, adds a confuse mech to the squad selection screen. Behaves like the gravity mech, but has a confuse shot instead of pull.",
+    { enabled = true }
+  )
 end
 
 function mod:init()
@@ -79,15 +86,36 @@ function mod:init()
   judo_shift_options = self:loadScript("skills/judo")
   -- gravwell script returns default A upgrade, config may overwrite it
   gravwellA = self:loadScript("skills/gravity")
+  self:loadScript("skills/confuse")
 
   -- sprites
   local sprites = self:loadScript("libs/sprites")
+  sprites.addSprite("weapons", "steel_science_confwell")
+  sprites.addSprite("effects", "steel_shot_confuse")
   sprites.addAnimation("combat/icons", "steel_time_icon",   {PosX = -10, PosY = 22})
   sprites.addAnimation("combat/icons", "steel_notime_icon", {PosX = -10, PosY = 22})
+  sprites.addMechs({
+    Name = "steel_mech_confuse",
+    Default =         { PosX = -20, PosY = -1 },
+    Animated =        { PosX = -20, PosY = -1, NumFrames = 4 },
+    Submerged =       { PosX = -22, PosY =  8 },
+    Broken =          { PosX = -20, PosY =  1 },
+    SubmergedBroken = { PosX = -19, PosY = 10 },
+    Icon =            {},
+  })
+
+  -- shop
+  self.shop = self:loadScript("libs/shop")
+  self.shop:addWeapon({
+    id = "Steel_Science_Confwell",
+    name = "Adds Confuse Well to the store",
+    desc = "Add Confuse Mech's weapon to the store."
+  })
 end
 
 function mod:load(options,version)
   self.modApiExt:load(self, options, version)
+  self.shop:load(options)
   self:loadScript("weaponPreview/api"):load()
 
   -- update from config
@@ -153,6 +181,9 @@ function mod:load(options,version)
   -- correct weapon texts
   Weapon_Texts.Science_Gravwell_Upgrade1 = Science_Gravwell_A.UpgradeName
   Weapon_Texts.Science_Gravwell_A_UpgradeDescription = Science_Gravwell_A.UpgradeDescription
+
+  --[[ Confuse Mech ]]--
+  self.enableConfuseMech = not options.confuseMech or options.confuseMech.enabled
 end
 
 return mod

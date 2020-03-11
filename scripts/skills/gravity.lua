@@ -1,5 +1,5 @@
 local mod = mod_loader.mods[modApi.currentMod]
-local previewer = mod:loadScript("weaponPreview/api")
+local timeDilation = mod:loadScript("libs/timeDilation")
 
 -- update vanilla weapon upgrades
 Science_Gravwell.Upgrades = 2
@@ -37,33 +37,6 @@ modApi:addWeapon_Texts({
 })
 
 --[[--
-  Actual dilation logic, needs to be done using board logic outside skill effect
-  Assumes a pawn exists on the space that is safe to dialate (enemy team)
-
-  @param point  Location of unit
-]]
-function Science_Gravwell_A:Dilation(point)
-  local pawn = Board:GetPawn(point)
-  Board:RemovePawn(pawn)
-  Board:AddPawn(pawn, point)
-end
-
---[[--
-  Dilates a unit, making it attack last
-
-  @param ret    Skill effect to add dilation into
-  @param point  Location of unit
-]]
-local function dialate(ret, point)
-  if Board:IsPawnSpace(point) and Board:IsPawnTeam(point, TEAM_ENEMY) then
-    ret:AddScript(string.format("Science_Gravwell_A:Dilation(%s)", point:GetString()))
-    previewer:AddAnimation(point, "steel_time_icon")
-  else
-    previewer:AddAnimation(point, "steel_notime_icon")
-  end
-end
-
---[[--
   Helper function to find a pawn that is not immobile
 
   @param point location to check for the pawn
@@ -93,7 +66,7 @@ function Science_Gravwell:GetSkillEffect(p1, p2)
 
   -- dilate target
   if self.Time then
-    dialate(ret, pullDamage.loc)
+    timeDilation(ret, pullDamage.loc)
   end
 
   -- actual pushing
