@@ -25,13 +25,13 @@ end
 function mod:metadata()
   modApi:addGenerationOption(
     "rockThrow",
-    "Rock Throw",
+    "Judo Rock Throw",
     "If checked, judo mech is allowed to target mountains, throwing a rock instead of a unit",
     { enabled = true }
   )
   modApi:addGenerationOption(
     "judoBaseRange",
-    "Base Judo Throw Range",
+    "Judo Base Throw Range",
     "Judo mech's base throw range without upgrades",
     {
       value = 1, -- default
@@ -118,25 +118,36 @@ function mod:load(options,version)
   self.shop:load(options)
   self:loadScript("weaponPreview/api"):load()
 
-  -- update from config
+
+  --[[ Judo Mech ]]--
+
   -- rock throw
-  self.rockThrow = options.rockThrow.enabled
+  self.rockThrow = not options.rockThrow or options.rockThrow.enabled
   local image = self.rockThrow and "Mountain" or "Normal"
   Prime_Shift.TipImage = Prime_Shift.TipImages[image]
 
   -- judo base range
-  self.judoBaseRange = options.judoBaseRange.value
+  self.judoBaseRange = options.judoBaseRange and options.judoBaseRange.value or 1
 
   -- judo mech upgrades
+  local upgradeA = options.judoUpgradeA and options.judoUpgradeA.value or "ally"
+  local upgradeB = options.judoUpgradeB and options.judoUpgradeB.value or "strength"
   local upgrades = {
-    A = shallow_copy(judo_shift_options.A[options.judoUpgradeA.value]),
-    B = shallow_copy(judo_shift_options.B[options.judoUpgradeB.value])
+    A = shallow_copy(judo_shift_options.A[upgradeA]),
+    B = shallow_copy(judo_shift_options.B[upgradeB])
   }
   -- set mountain tips if relevant
   for _, upgrade in pairs(upgrades) do
     if upgrade.TipImages then
       upgrade.TipImage = upgrade.TipImages[image]
     end
+  end
+
+  -- choke and range both cost 2, ally immune costs 1
+  if upgradeA == "ally" then
+    Prime_Shift.UpgradeCost[1] = 1
+  else
+    Prime_Shift.UpgradeCost[1] = 2
   end
 
   -- create actual upgrades
@@ -148,13 +159,6 @@ function mod:load(options,version)
   Prime_Shift_A  = Prime_Shift:new(upgrades.A)
   Prime_Shift_B  = Prime_Shift:new(upgrades.B)
   Prime_Shift_AB = Prime_Shift_B:new(upgrades.AB)
-
-  -- upgrade costs
-  if options.judoUpgradeA.value == "master" then
-    Prime_Shift.UpgradeCost[1] = 2
-  else
-    Prime_Shift.UpgradeCost[1] = 1
-  end
 
   -- set texts
   Weapon_Texts.Prime_Shift_Upgrade1 = upgrades.A.UpgradeName

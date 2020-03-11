@@ -4,18 +4,18 @@ local previewer = mod:loadScript("weaponPreview/api")
 
 -- override Prime_Shift with changes
 Prime_Shift = Skill:new{
-  -- basic
+	-- basic
 	Class = "Prime",
 	Icon = "weapons/prime_shift.png",
-  -- upgrades
+	-- upgrades
 	PowerCost = 0,
 	Upgrades = 2,
 	UpgradeCost = {1,3},
-  -- overrides
+	-- overrides
 	Damage = 1,
-  FriendlyDamage = true,
+	FriendlyDamage = true,
 	RangeBoost = 0,
-  -- display
+	-- display
 	LaunchSound = "/weapons/shift",
 	TipImages = {
 		Mountain = {
@@ -74,7 +74,7 @@ shift_options.A.ally = {
 	}
 }
 
--- Upgrade A: judo master
+-- Upgrade A: range
 shift_options.A.range = {
 	UpgradeName = "+1 Range",
 	UpgradeDescription = "Increases range by 1.",
@@ -147,35 +147,35 @@ function Prime_Shift:GetTargetArea(point)
 			if canTarget then
 				ret:push_back(target)
 			end
-    end
+		end
 	end
 
 	return ret
 end
 
 --[[--
-  Spawns in a rock on a mountain, as vanilla does not like spawning units on mountains
+	Spawns in a rock on a mountain, as vanilla does not like spawning units on mountains
 
-  @param  space  Point to place the rock
+	@param  space  Point to place the rock
 ]]
 function Prime_Shift:AddRock(space)
-  -- start by removing the mountain
-  local mountainHealth = 0
-  if Board:GetTerrain(space) == TERRAIN_MOUNTAIN then
-    mountainHealth = cutils.GetTileHealth(Board, space)
-    Board:SetTerrain(space, TERRAIN_RUBBLE)
-  end
+	-- start by removing the mountain
+	local mountainHealth = 0
+	if Board:GetTerrain(space) == TERRAIN_MOUNTAIN then
+		mountainHealth = cutils.GetTileHealth(Board, space)
+		Board:SetTerrain(space, TERRAIN_RUBBLE)
+	end
 
-  -- spawn in the rock
-  local rock = SpaceDamage(space, 0)
-  rock.sPawn = "RockThrown"
-  Board:DamageSpace(rock)
+	-- spawn in the rock
+	local rock = SpaceDamage(space, 0)
+	rock.sPawn = "RockThrown"
+	Board:DamageSpace(rock)
 
-  -- then add the mountain back if we had one
-  if mountainHealth > 0 then
-    Board:SetTerrain(space, TERRAIN_MOUNTAIN)
-    cutils.SetTileHealth(Board, space, mountainHealth)
-  end
+	-- then add the mountain back if we had one
+	if mountainHealth > 0 then
+		Board:SetTerrain(space, TERRAIN_MOUNTAIN)
+		cutils.SetTileHealth(Board, space, mountainHealth)
+	end
 end
 
 -- toss units to landing
@@ -199,7 +199,7 @@ function Prime_Shift:GetSkillEffect(p1, p2)
 			end
 		end
 	else
-		-- if targeting an empty space, that is where the unit lands
+		-- if targeting an empty space, that is where the unit lands, so determine target pawn
 		target = p1 - DIR_VECTORS[dir]
 	end
 
