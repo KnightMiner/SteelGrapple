@@ -1,7 +1,7 @@
 local mod = {
   id = "steel_grapple",
   name = "Steel Grapple",
-  version = "0.0.1",
+  version = "1.0.0",
   requirements = {},
   icon = "img/icon.png",
   rockThrow = true,
