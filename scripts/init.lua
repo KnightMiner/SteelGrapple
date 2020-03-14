@@ -44,8 +44,8 @@ function mod:metadata()
     "Determines the first upgrade for the judo mech.",
     {
       value = "ally", -- default
-      values = { "ally", "range", "master" },
-      strings = { "Ally Immune (vanilla)", "+1 Range", "Judo Master" }
+      values = { "ally", "range", "choke" },
+      strings = { "Ally Immune (vanilla)", "+1 Range", "Choke Hold" }
     }
   )
   modApi:addGenerationOption(

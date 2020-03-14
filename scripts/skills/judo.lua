@@ -15,21 +15,22 @@ Prime_Shift = Skill:new{
 	Damage = 1,
 	FriendlyDamage = true,
 	RangeBoost = 0,
+	Choke = false,
 	-- display
 	LaunchSound = "/weapons/shift",
 	TipImages = {
 		Mountain = {
 			Unit          = Point(2,2),
 			Enemy         = Point(2,1),
-			Target        = Point(2,1),
+			Target        = Point(2,3),
 			Mountain      = Point(1,2),
 			Second_Origin = Point(2,2),
-			Second_Target = Point(1,2)
+			Second_Target = Point(3,2)
 		},
 		Normal = {
 			Unit   = Point(2,2),
 			Enemy  = Point(2,1),
-			Target = Point(2,1)
+			Target = Point(2,3)
 		}
 	}
 }
@@ -43,7 +44,7 @@ local MOUNTAIN_RANGE = {
 		Target        = Point(2,4),
 		Mountain      = Point(1,2),
 		Second_Origin = Point(2,2),
-		Second_Target = Point(1,2)
+		Second_Target = Point(3,2)
 	},
 	Normal = {
 		Unit   = Point(2,2),
@@ -82,19 +83,18 @@ shift_options.A.range = {
 	TipImages = MOUNTAIN_RANGE
 }
 
--- Upgrade A: judo master
-shift_options.A.master = {
-	UpgradeName = "Judo Master",
-	UpgradeDescription = "Deals no damage to allies and increases range by 1.",
-	RangeBoost = 1,
-	FriendlyDamage = false,
+-- Upgrade A: choke hold
+shift_options.A.choke = {
+	UpgradeName = "Choke Hold",
+	UpgradeDescription = "Deal extra damage to an adjecent, without moving it.",
+	Choke = true,
 	TipImage = {
 		Unit          = Point(2,2),
-		Friendly      = Point(2,1),
-		Enemy         = Point(3,2),
-		Target        = Point(2,4),
+		Enemy         = Point(2,1),
+		Target        = Point(2,1),
+		Mountain      = Point(1,2),
 		Second_Origin = Point(2,2),
-		Second_Target = Point(1,2),
+		Second_Target = Point(1,2)
 	}
 }
 
@@ -125,24 +125,45 @@ Prime_Shift_A = Prime_Shift:new(shift_options.A.ally)
 Prime_Shift_B = Prime_Shift:new(shift_options.B.damage)
 Prime_Shift_AB = Prime_Shift_B:new(shift_options.A.ally)
 
+--[[--
+	Helper function to find a target is mobile
+
+	@param point        Location to check for mobility
+	@param allowStable  If true, stable targets can be targeted
+	@return  True if this point can be targeted
+]]
+local function canTargetSpace(point, allowStable)
+	-- if its a pawn and mobile, targetable
+	-- if its a mountain and rock throw, targetable
+	-- if we are choking, can target mountains or stable
+	return (Board:IsPawnSpace(point) and (allowStable or not Board:GetPawn(point):IsGuarding()))
+			or (allowStable or mod.rockThrow) and Board:GetTerrain(point) == TERRAIN_MOUNTAIN
+end
+
 -- targets landing instead of units
 function Prime_Shift:GetTargetArea(point)
 	local ret = PointList()
 	for dir = DIR_START, DIR_END do
-    local side = DIR_VECTORS[dir]
-    local target = point + side
-    -- can target non-guarding pawns or mountains
-    if (Board:IsPawnSpace(target) and not Board:GetPawn(target):IsGuarding())
-        or mod.rockThrow and Board:GetTerrain(target) == TERRAIN_MOUNTAIN then
-      -- can land on spaces behind the mech that are open
+		local side = DIR_VECTORS[dir]
+		local target = point + side
+		-- can target non-guarding pawns or mountains
+		if canTargetSpace(target, self.Choke) then
+			-- can land on spaces behind the mech that are open
 			local canTarget = false
-      for i = 1, (mod.judoBaseRange + self.RangeBoost) do
-        local landing = point - side * i
-        if not Board:IsBlocked(landing, PATH_FLYER) then
-          ret:push_back(landing)
-					canTarget = true
-        end
-      end
+			-- choke can target any pawn
+			if self.Choke then
+				canTarget = true
+			end
+			-- only add extra pawns if not guarding
+			if canTargetSpace(target, false) then
+				for i = 1, (mod.judoBaseRange + self.RangeBoost) do
+					local landing = point - side * i
+					if not Board:IsBlocked(landing, PATH_FLYER) then
+						ret:push_back(landing)
+						canTarget = true
+					end
+				end
+			end
 			-- add the pawn as targetable too, adds compat with old behavior
 			if canTarget then
 				ret:push_back(target)
@@ -190,12 +211,16 @@ function Prime_Shift:GetSkillEffect(p1, p2)
 	-- if targeting the pawn, throw to first available space
 	if Board:IsPawnSpace(p2) or Board:GetTerrain(p2) == TERRAIN_MOUNTAIN then
 		target = p2
-		local offset = DIR_VECTORS[dir]
-		for i = 1, (mod.judoBaseRange + self.RangeBoost) do
-			local point = p1 - offset * i
-			if not Board:IsBlocked(point, PATH_FLYER) then
-				landing = point
-				break
+
+		-- choking keeps pawn in position however
+		if not self.Choke then
+			local offset = DIR_VECTORS[dir]
+			for i = 1, (mod.judoBaseRange + self.RangeBoost) do
+				local point = p1 - offset * i
+				if not Board:IsBlocked(point, PATH_FLYER) then
+					landing = point
+					break
+				end
 			end
 		end
 	else
@@ -211,24 +236,32 @@ function Prime_Shift:GetSkillEffect(p1, p2)
 	-- mountains throw a rock
 	if mod.rockThrow and Board:GetTerrain(target) == TERRAIN_MOUNTAIN then
 		ret:AddMelee(p1, SpaceDamage(target, self.Damage))
-		ret:AddScript(string.format("Prime_Shift:AddRock(%s)", target:GetString()))
-		ret:AddLeap(move, FULL_DELAY)
-		ret:AddBounce(landing, 3)
-		ret:AddSound("/impact/dynamic/rock")
+		-- no rock if choking
+		if target ~= landing then
+			ret:AddScript(string.format("Prime_Shift:AddRock(%s)", target:GetString()))
+			ret:AddLeap(move, FULL_DELAY)
+			ret:AddBounce(landing, 3)
+			ret:AddSound("/impact/dynamic/rock")
 
-		-- add a fake rock for the preview
-		local fakeRock = SpaceDamage(landing, 0)
-		fakeRock.sPawn = "RockThrown"
-		previewer:AddDamage(fakeRock)
+			-- add a fake rock for the preview
+			local fakeRock = SpaceDamage(landing, 0)
+			fakeRock.sPawn = "RockThrown"
+			previewer:AddDamage(fakeRock)
+		end
 	else
-		-- animation punch and toss
-		local fake_punch = SpaceDamage(target, 0)
-		ret:AddMelee(p1, fake_punch)
-		ret:AddLeap(move, FULL_DELAY)
+		-- fake punch and toss
+		ret:AddMelee(p1, SpaceDamage(target, 0))
+		-- only add leap if the pawn moves (its a choke otherwise)
+		local damage = self.Damage
+		if target ~= landing then
+			ret:AddLeap(move, FULL_DELAY)
+		else
+			damage = damage + 1
+		end
 
 		-- damage the target after landing
 		if self.FriendlyDamage or not Board:IsPawnTeam(target, TEAM_PLAYER) then
-			ret:AddDamage(SpaceDamage(landing, self.Damage))
+			ret:AddDamage(SpaceDamage(landing, damage))
 		end
 		ret:AddBounce(landing, 3)
 	end
