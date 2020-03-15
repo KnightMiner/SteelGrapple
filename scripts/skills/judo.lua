@@ -86,7 +86,7 @@ shift_options.A.range = {
 -- Upgrade A: choke hold
 shift_options.A.choke = {
 	UpgradeName = "Choke Hold",
-	UpgradeDescription = "Deal extra damage to an adjecent, without moving it.",
+	UpgradeDescription = "Deal extra damage to an adjacent unit without moving it.",
 	Choke = true,
 	TipImage = {
 		Unit          = Point(2,2),
