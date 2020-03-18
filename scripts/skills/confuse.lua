@@ -90,7 +90,7 @@ function Steel_Science_Confwell_Tip:GetSkillEffect(p1,p2)
   return ret
 end
 
--- add mech to starter screen
+-- add mech to selection screen
 modApi:addModsInitializedHook(function()
   local oldGetStartingSquad = getStartingSquad
   function getStartingSquad(choice, ...)
@@ -101,7 +101,8 @@ modApi:addModsInitializedHook(function()
     end
 
     -- if confuse mech is enabled, insert into the results
-    if choice == 0 then
+    -- steel judoku is always in slot 4, but slot 4 may not be Steel Judoku
+    if choice == 4 and result[1] == "Steel Judoka" then
       local copy = {}
       for i, v in pairs(result) do
         copy[#copy+1] = v
