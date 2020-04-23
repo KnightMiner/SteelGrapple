@@ -2,271 +2,89 @@ local mod = mod_loader.mods[modApi.currentMod]
 local cutils = mod:loadScript("libs/cutils")
 local previewer = mod:loadScript("weaponPreview/api")
 
--- override Prime_Shift with changes
-Prime_Shift = Skill:new{
-	-- basic
-	Class = "Prime",
-	Icon = "weapons/prime_shift.png",
-	-- upgrades
-	PowerCost = 0,
-	Upgrades = 2,
-	UpgradeCost = {1,3},
-	-- overrides
-	Damage = 1,
-	FriendlyDamage = true,
-	RangeBoost = 0,
-	Choke = false,
-	-- display
-	LaunchSound = "/weapons/shift",
-	TipImages = {
-		Mountain = {
-			Unit          = Point(2,2),
-			Enemy         = Point(2,1),
-			Target        = Point(2,3),
-			Mountain      = Point(1,2),
-			Second_Origin = Point(2,2),
-			Second_Target = Point(3,2)
-		},
-		Normal = {
-			Unit   = Point(2,2),
-			Enemy  = Point(2,1),
-			Target = Point(2,3)
-		}
-	}
+local weapons = {
+	normal = {
+		Prime_Shift = Prime_Shift,
+		Prime_Shift_A = Prime_Shift_A,
+		Prime_Shift_B = Prime_Shift_B,
+		Prime_Shift_AB = Prime_Shift_AB
+	},
+	rock = {}
 }
-Prime_Shift.TipImage = Prime_Shift.TipImage.Mountain
 
---- Tooltip for a mountain with range
-local MOUNTAIN_RANGE = {
-	Mountain = {
+-- replacement for Prime_Shift with rock throw ability
+weapons.rock.Prime_Shift = Prime_Shift:new{
+	TipImage = {
 		Unit          = Point(2,2),
 		Enemy         = Point(2,1),
-		Target        = Point(2,4),
+		Target        = Point(2,3),
 		Mountain      = Point(1,2),
 		Second_Origin = Point(2,2),
 		Second_Target = Point(3,2)
-	},
-	Normal = {
-		Unit   = Point(2,2),
-		Enemy  = Point(2,1),
-		Target = Point(2,4)
 	}
 }
-
---- Table of options to swap for config
---- these are not full classes, but will be used to build classes on load
-local shift_options = {
-	A = {},
-	B = {}
-}
-
--- upgrade A: ally immune
-shift_options.A.ally = {
-	UpgradeName = "Ally Immune",
-	UpgradeDescription = "Deals no damage to allies.",
+weapons.rock.Prime_Shift_A = weapons.rock.Prime_Shift:new{
 	FriendlyDamage = false,
 	TipImage = {
-		Unit          = Point(2,2),
-		Friendly      = Point(2,1),
-		Enemy         = Point(3,2),
-		Target        = Point(2,3),
+		Unit = Point(2,2),
+		Friendly = Point(2,1),
+		Enemy = Point(3,2),
+		Target = Point(2,1),
 		Second_Origin = Point(2,2),
-		Second_Target = Point(1,2),
+		Second_Target = Point(3,2),
 	}
 }
-
--- Upgrade A: range
-shift_options.A.range = {
-	UpgradeName = "+1 Range",
-	UpgradeDescription = "Increases range by 1.",
-	RangeBoost = 1,
-	TipImages = MOUNTAIN_RANGE
-}
-
--- Upgrade A: choke hold
-shift_options.A.choke = {
-	UpgradeName = "Choke Hold",
-	UpgradeDescription = "Deal extra damage to an adjacent unit without moving it.",
-	Choke = true,
-	TipImage = {
-		Unit          = Point(2,2),
-		Enemy         = Point(2,1),
-		Target        = Point(2,1),
-		Mountain      = Point(1,2),
-		Second_Origin = Point(2,2),
-		Second_Target = Point(1,2)
-	}
-}
-
--- Upgrade B: +2 damage (vanilla)
-shift_options.B.damage = {
-	UpgradeName = "+2 Damage",
-	UpgradeDescription = "Increases damage by 2.",
+weapons.rock.Prime_Shift_B = weapons.rock.Prime_Shift:new{
 	Damage = 3
 }
--- Upgrade B: +2 range
-shift_options.B.range = {
-	UpgradeName = "+2 Range",
-	UpgradeDescription = "Increases range by 2.",
-	RangeBoost = 2,
-	TipImages = MOUNTAIN_RANGE
+weapons.rock.Prime_Shift_AB = weapons.rock.Prime_Shift_A:new{
+	Damage = 3
 }
--- Upgrade B: strength
-shift_options.B.strength = {
-	UpgradeName = "Strength",
-	UpgradeDescription = "Increases damage and range by 1.",
-	RangeBoost = 1,
-	Damage = 2,
-	TipImages = MOUNTAIN_RANGE
-}
-
--- default upgrades: TODO
-Prime_Shift_A = Prime_Shift:new(shift_options.A.ally)
-Prime_Shift_B = Prime_Shift:new(shift_options.B.damage)
-Prime_Shift_AB = Prime_Shift_B:new(shift_options.A.ally)
-
---[[--
-	Helper function to find a target is mobile
-
-	@param point        Location to check for mobility
-	@param allowStable  If true, stable targets can be targeted
-	@return  True if this point can be targeted
-]]
-local function canTargetSpace(point, allowStable)
-	-- if its a pawn and mobile, targetable
-	-- if its a mountain and rock throw, targetable
-	-- if we are choking, can target mountains or stable
-	return (Board:IsPawnSpace(point) and (allowStable or not Board:GetPawn(point):IsGuarding()))
-			or (allowStable or mod.rockThrow) and Board:GetTerrain(point) == TERRAIN_MOUNTAIN
-end
-
--- targets landing instead of units
-function Prime_Shift:GetTargetArea(point)
+--- add in mountain targeting
+function weapons.rock.Prime_Shift:GetTargetArea(point)
 	local ret = PointList()
-	for dir = DIR_START, DIR_END do
-		local side = DIR_VECTORS[dir]
-		local target = point + side
-		-- can target non-guarding pawns or mountains
-		if canTargetSpace(target, self.Choke) then
-			-- can land on spaces behind the mech that are open
-			local canTarget = false
-			-- choke can target any pawn
-			if self.Choke then
-				canTarget = true
-			end
-			-- only add extra pawns if not guarding
-			if canTargetSpace(target, false) then
-				for i = 1, (mod.judoBaseRange + self.RangeBoost) do
-					local landing = point - side * i
-					if not Board:IsBlocked(landing, PATH_FLYER) then
-						ret:push_back(landing)
-						canTarget = true
-					end
-				end
-			end
-			-- add the pawn as targetable too, adds compat with old behavior
-			if canTarget then
-				ret:push_back(target)
-			end
+	for i = DIR_START, DIR_END do
+		local target = point + DIR_VECTORS[i]
+		if not Board:IsBlocked(point - DIR_VECTORS[i], PATH_FLYER)
+			and ((Board:IsPawnSpace(target) and not Board:GetPawn(target):IsGuarding())
+			  or Board:IsTerrain(target, TERRAIN_MOUNTAIN)) then
+			ret:push_back(target)
 		end
 	end
 
 	return ret
 end
-
---[[--
-	Spawns in a rock on a mountain, as vanilla does not like spawning units on mountains
-
-	@param  space  Point to place the rock
-]]
-function Prime_Shift:AddRock(space)
-	-- start by removing the mountain
-	local mountainHealth = 0
-	if Board:GetTerrain(space) == TERRAIN_MOUNTAIN then
-		mountainHealth = cutils.GetTileHealth(Board, space)
-		Board:SetTerrain(space, TERRAIN_RUBBLE)
-	end
-
-	-- spawn in the rock
-	local rock = SpaceDamage(space, 0)
-	rock.sPawn = "RockThrown"
-	Board:DamageSpace(rock)
-
-	-- then add the mountain back if we had one
-	if mountainHealth > 0 then
-		Board:SetTerrain(space, TERRAIN_MOUNTAIN)
-		cutils.SetTileHealth(Board, space, mountainHealth)
-	end
-end
-
--- toss units to landing
-function Prime_Shift:GetSkillEffect(p1, p2)
+--- add in mountain targeting
+function weapons.rock.Prime_Shift:GetSkillEffect(p1, p2)
 	local ret = SkillEffect()
 	local dir = GetDirection(p2 - p1)
-
-	-- determine target and landing
-	local target
-	local landing = p2
-
-	-- if targeting the pawn, throw to first available space
-	if Board:IsPawnSpace(p2) or Board:GetTerrain(p2) == TERRAIN_MOUNTAIN then
-		target = p2
-
-		-- choking keeps pawn in position however
-		if not self.Choke then
-			local offset = DIR_VECTORS[dir]
-			for i = 1, (mod.judoBaseRange + self.RangeBoost) do
-				local point = p1 - offset * i
-				if not Board:IsBlocked(point, PATH_FLYER) then
-					landing = point
-					break
-				end
-			end
-		end
+	local target = p1-DIR_VECTORS[dir]
+	if Board:IsTerrain(p2, TERRAIN_MOUNTAIN) then
+		-- punch mountain
+		ret:AddMelee(p1, SpaceDamage(p2, self.Damage))
+		-- toss rock to target
+		local rock = SpaceDamage(target, 0)
+		rock.sPawn = "RockThrown"
+		ret:AddArtillery(p2, rock, FULL_DELAY)
+		ret:AddBounce(target, 3)
+		ret:AddSound("/impact/dynamic/rock")
 	else
-		-- if targeting an empty space, that is where the unit lands, so determine target pawn
-		target = p1 - DIR_VECTORS[dir]
+		-- punch for animation
+		ret:AddMelee(p1, SpaceDamage(p2, 0))
+		-- toss the target
+		local move = PointList()
+		move:push_back(p2)
+		move:push_back(target)
+		ret:AddLeap(move, FULL_DELAY)
+		-- damage the target
+		local damage = SpaceDamage(target,self.Damage)
+		if not self.FriendlyDamage and Board:IsPawnTeam(p2,TEAM_PLAYER) then
+			damage.iDamage = 0
+		end
+		ret:AddDamage(damage)
+		ret:AddBounce(target, 3)
 	end
-
-	-- area to toss unit
-	local move = PointList()
-	move:push_back(target)
-	move:push_back(landing)
-
-	-- mountains throw a rock
-	if mod.rockThrow and Board:GetTerrain(target) == TERRAIN_MOUNTAIN then
-		ret:AddMelee(p1, SpaceDamage(target, self.Damage))
-		-- no rock if choking
-		if target ~= landing then
-			ret:AddScript(string.format("Prime_Shift:AddRock(%s)", target:GetString()))
-			ret:AddLeap(move, FULL_DELAY)
-			ret:AddBounce(landing, 3)
-			ret:AddSound("/impact/dynamic/rock")
-
-			-- add a fake rock for the preview
-			local fakeRock = SpaceDamage(landing, 0)
-			fakeRock.sPawn = "RockThrown"
-			previewer:AddDamage(fakeRock)
-		end
-	else
-		-- fake punch and toss
-		ret:AddMelee(p1, SpaceDamage(target, 0))
-		-- only add leap if the pawn moves (its a choke otherwise)
-		local damage = self.Damage
-		if target ~= landing then
-			ret:AddLeap(move, FULL_DELAY)
-		else
-			damage = damage + 1
-		end
-
-		-- damage the target after landing
-		if self.FriendlyDamage or not Board:IsPawnTeam(target, TEAM_PLAYER) then
-			ret:AddDamage(SpaceDamage(landing, damage))
-		end
-		ret:AddBounce(landing, 3)
-	end
-
 	return ret
 end
 
-return shift_options
+return weapons
