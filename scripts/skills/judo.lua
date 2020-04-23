@@ -1,7 +1,3 @@
-local mod = mod_loader.mods[modApi.currentMod]
-local cutils = mod:loadScript("libs/cutils")
-local previewer = mod:loadScript("weaponPreview/api")
-
 local weapons = {
 	normal = {
 		Prime_Shift = Prime_Shift,
