@@ -11,7 +11,6 @@ local mod = {
 
 --- Options for prime shift, will be set based on config
 local judoShifts
-local gravwellA
 
 --[[--
   Helper function to load mod scripts
@@ -61,32 +60,16 @@ function mod:metadata()
     "If checked, gravity mech can upgrade the gravity well to make an enemy attack last",
     { enabled = true }
   )
-  modApi:addGenerationOption(
-    "directionalShot",
-    "Gravity Directional Upgrade",
-    "If checked, gravity mech can upgrade the gravity well to allow pushing instead of just pulling",
-    { enabled = true }
-  )
-  modApi:addGenerationOption(
-    "confuseMech",
-    "Confuse Mech",
-    "If checked, adds a confuse mech to the squad selection screen. Behaves like the gravity mech, but has a confuse shot instead of pull.",
-    { enabled = true }
-  )
 end
 
 function mod:init()
-  self:loadScript("weaponPreview/api")
-  self.modApiExt = self:loadScript("modApiExt/modApiExt")
-  self.modApiExt:init()
-
   -- sprites
   local sprites = self:loadScript("libs/sprites")
   sprites.addSprite("weapons", "steel_science_confwell")
   sprites.addSprite("weapons", "steel_grapple_fist")
   sprites.addSprite("effects", "steel_shot_confuse")
-  sprites.addAnimation("combat/icons", "steel_time_icon",   {PosX = -10, PosY = 22})
-  sprites.addAnimation("combat/icons", "steel_notime_icon", {PosX = -10, PosY = 22})
+  sprites.addIcon("combat/icons", "steel_time_icon", Point(-10,22))
+  sprites.addIcon("combat/icons", "steel_notime_icon", Point(-10,22))
   sprites.addMechs(
     {
       Name = "steel_grapple_mech",
@@ -113,7 +96,7 @@ function mod:init()
   self:loadScript("skills/confuse")
   -- judoka tweaks
   judoShifts = self:loadScript("skills/judo")
-  gravwellA = self:loadScript("skills/gravity")  -- gravwell script returns default A upgrade, config may overwrite it
+  self:loadScript("skills/gravity")  -- gravwell script returns default A upgrade, config may overwrite it
 
   -- shop
   self.shop = self:loadScript("libs/shop")
@@ -135,10 +118,7 @@ function mod:init()
 end
 
 function mod:load(options,version)
-  self.modApiExt:load(self, options, version)
   self.shop:load(options)
-  self:loadScript("weaponPreview/api"):load()
-
   modApi:addSquad(
     { "Steel Grapple", "SteelGrappleMech", "DStrikeMech", "SteelConfMech" },
     "Steel Grapple",
@@ -161,26 +141,9 @@ function mod:load(options,version)
   end
 
   --[[ Gravity Mech ]]--
-
+  -- if time is enabled, enable upgrade A
   local gravTime = not options.timeDilation or options.timeDilation.enabled
-  local gravDir = not options.directionalShot or options.directionalShot.enabled
-  -- if time is enabled, restore upgrade A
-  if gravTime then
-    Science_Gravwell_A = gravwellA
-    Science_Gravwell.UpgradeCost[1] = 1
-  -- if directional and not time, replace upgrade A
-  elseif gravDir then
-    Science_Gravwell_A = Science_Gravwell_B
-    Science_Gravwell.UpgradeCost[1] = 2
-  end
-  -- upgrade count based on how many enabled
-  Science_Gravwell.Upgrades = (gravTime and 1 or 0) + (gravDir and 1 or 0)
-  -- correct weapon texts
-  Weapon_Texts.Science_Gravwell_Upgrade1 = Science_Gravwell_A.UpgradeName
-  Weapon_Texts.Science_Gravwell_A_UpgradeDescription = Science_Gravwell_A.UpgradeDescription
-
-  --[[ Confuse Mech ]]--
-  self.enableConfuseMech = not options.confuseMech or options.confuseMech.enabled
+  Science_Gravwell.Upgrades = gravTime and 1 or 0
 end
 
 return mod

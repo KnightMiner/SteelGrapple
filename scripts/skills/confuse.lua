@@ -51,15 +51,20 @@ function Steel_Science_Confwell:GetSkillEffect(p1,p2)
   local ret = SkillEffect()
   ret:AddBounce(p1, -2)
 
-  -- dilate target
-  if self.Time then
-    timeDilation(ret, p2)
-  end
 
   -- flip target
   local damage = SpaceDamage(p2, self.Damage, DIR_FLIP)
   damage.sAnimation = "ExploRepulse3"
+  -- cannot set the icon if its already got damage on the space
+  if self.Time then
+    damage.sImageMark = timeDilation.getIcon(p2)
+  end
   ret:AddArtillery(damage, "effects/steel_shot_confuse.png")
+
+  -- dilate target
+  if self.Time then
+    timeDilation.apply(ret, p2, GL_Color(128, 128, 0))
+  end
 
   return ret
 end
@@ -89,28 +94,3 @@ function Steel_Science_Confwell_Tip:GetSkillEffect(p1,p2)
   ret:AddArtillery(damage, "effects/steel_shot_confuse.png")
   return ret
 end
-
--- add mech to selection screen
-modApi:addModsInitializedHook(function()
-  local oldGetStartingSquad = getStartingSquad
-  function getStartingSquad(choice, ...)
-    -- get vanilla results
-    local result = oldGetStartingSquad(choice, ...)
-    if not mod.enableConfuseMech then
-      return result
-    end
-
-    -- if confuse mech is enabled, insert into the results
-    -- steel judoku is always in slot 4, but slot 4 may not be Steel Judoku
-    if choice == 4 and result[1] == "Steel Judoka" then
-      local copy = {}
-      for i, v in pairs(result) do
-        copy[#copy+1] = v
-      end
-      copy[#copy+1] = "SteelConfMech"
-      return copy
-    end
-
-    return result
-  end
-end)
