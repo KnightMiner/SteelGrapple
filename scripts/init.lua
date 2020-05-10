@@ -67,6 +67,7 @@ function mod:init()
   local sprites = self:loadScript("libs/sprites")
   sprites.addSprite("weapons", "steel_science_confwell")
   sprites.addSprite("weapons", "steel_grapple_fist")
+  sprites.addSprite("weapons", "steel_ranged_cyclone")
   sprites.addSprite("effects", "steel_shot_confuse")
   sprites.addIcon("combat/icons", "steel_time_add_icon", Point(-10,22))
   sprites.addIcon("combat/icons", "steel_time_sub_icon", Point(-10,22))
@@ -80,6 +81,14 @@ function mod:init()
       Broken =          { PosX = -17, PosY = -2 },
       SubmergedBroken = { PosX = -14, PosY =  6 },
       Icon =            {},
+    {
+      Name = "steel_cyclone_mech",
+      Default         = { PosX = -18, PosY = -5 },
+      Animated        = { PosX = -18, PosY = -5, NumFrames = 4 },
+      Submerged       = { PosX = -18, PosY =  8 },
+      Broken          = { PosX = -18, PosY = -5 },
+      SubmergedBroken = { PosX = -18, PosY =  8 },
+      Icon            = {},
     },
     {
       Name = "steel_mech_confuse",
@@ -94,6 +103,7 @@ function mod:init()
 
   -- squad weapons
   self:loadScript("skills/grapple")
+  self:loadScript("skills/cyclone")
   self:loadScript("skills/confuse")
   -- judoka tweaks
   judoShifts = self:loadScript("skills/judo")
@@ -107,13 +117,18 @@ function mod:init()
     desc = "Add Confuse Mech's weapon to the store."
   })
   self.shop:addWeapon({
+    id = "Steel_Ranged_Cyclone",
+    name = "Cyclone Artillery shop",
+    desc = "Add Cyclone Mech's weapon to the store."
+  })
+  self.shop:addWeapon({
     id = "Steel_Science_Confwell",
     name = "Confuse Well shop",
     desc = "Add Confuse Mech's weapon to the store."
   })
 
   -- fix the weapon texts for relevant weapons
-  for _, id in ipairs({"Steel_Grapple_Fist", "Steel_Science_Confwell"}) do
+  for _, id in ipairs({"Steel_Grapple_Fist", "Steel_Ranged_Cyclone", "Steel_Science_Confwell"}) do
     fixWeaponTexts(id)
   end
 end
