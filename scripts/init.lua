@@ -68,8 +68,9 @@ function mod:init()
   sprites.addSprite("weapons", "steel_science_confwell")
   sprites.addSprite("weapons", "steel_grapple_fist")
   sprites.addSprite("effects", "steel_shot_confuse")
-  sprites.addIcon("combat/icons", "steel_time_icon", Point(-10,22))
-  sprites.addIcon("combat/icons", "steel_notime_icon", Point(-10,22))
+  sprites.addIcon("combat/icons", "steel_time_add_icon", Point(-10,22))
+  sprites.addIcon("combat/icons", "steel_time_sub_icon", Point(-10,22))
+  sprites.addIcon("combat/icons", "steel_no_time_icon", Point(-10,22))
   sprites.addMechs(
     {
       Name = "steel_grapple_mech",
@@ -96,7 +97,7 @@ function mod:init()
   self:loadScript("skills/confuse")
   -- judoka tweaks
   judoShifts = self:loadScript("skills/judo")
-  self:loadScript("skills/gravity")  -- gravwell script returns default A upgrade, config may overwrite it
+  self:loadScript("skills/gravity")
 
   -- shop
   self.shop = self:loadScript("libs/shop")

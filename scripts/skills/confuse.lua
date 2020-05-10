@@ -1,7 +1,3 @@
-local mod = mod_loader.mods[modApi.currentMod]
-local timeDilation = mod:loadScript("libs/timeDilation")
-
--- Alternate weapon: confuse shot
 SteelConfMech = Pawn:new {
   Name = "Confuse Mech",
   Class = "Science",
@@ -40,34 +36,65 @@ Steel_Science_Confwell_A = Steel_Science_Confwell:new{
   Time = true
 }
 
-modApi:addWeapon_Texts({
-  Steel_Science_Confwell_Name = "Confuse Well",
-  Steel_Science_Confwell_Description = "Artillery weapon that confuses its target.",
-  Steel_Science_Confwell_Upgrade1 = "Time Confusion",
-  Steel_Science_Confwell_A_UpgradeDescription = "Makes the targeted enemy attack last."
-})
+function Steel_Science_Confwell:Advance(point)
+  local target = Board:GetPawn(point)
+  local targetId = target:GetId()
+  -- remove each pawn but target
+  local pawns = Board:GetPawns(TEAM_ENEMY)
+  for i = 1, pawns:size() do
+    local pawnId = pawns:index(i)
+    if pawnId ~= targetId then
+      local pawn = Board:GetPawn(pawnId)
+      local pawnSpace = pawn:GetSpace()
+      Board:RemovePawn(pawn)
+      Board:AddPawn(pawn, pawnSpace)
+      pawn:SetSpace(pawnSpace)
+    end
+  end
+  -- yellow glow on target
+  Board:Ping(point, GL_Color(64, 196, 0))
+end
 
-function Steel_Science_Confwell:GetSkillEffect(p1,p2)
-  local ret = SkillEffect()
+local function skillEffect(self, ret, p1, p2, hide)
   ret:AddBounce(p1, -2)
 
 
   -- flip target
   local damage = SpaceDamage(p2, self.Damage, DIR_FLIP)
   damage.sAnimation = "ExploRepulse3"
-  -- cannot set the icon if its already got damage on the space
+  damage.bHide = hide
+
+  -- if time, add icon and make target first
+  local advance = false
   if self.Time then
-    damage.sImageMark = timeDilation.getIcon(p2)
+    if Board:IsPawnSpace(p2) and Board:IsPawnTeam(p2, TEAM_ENEMY) then
+      damage.sImageMark = "combat/icons/steel_time_add_icon.png"
+      advance = true
+    else
+      damage.sImageMark = "combat/icons/steel_no_time_icon.png"
+    end
   end
+  -- actual artillery
   ret:AddArtillery(damage, "effects/steel_shot_confuse.png")
 
-  -- dilate target
-  if self.Time then
-    timeDilation.apply(ret, p2, GL_Color(128, 128, 0))
+  -- dilation
+  if advance then
+    ret:AddScript(string.format("Steel_Science_Confwell:Advance(%s)", p2:GetString()))
   end
 
   return ret
 end
+
+function Steel_Science_Confwell:GetSkillEffect(p1, p2)
+  return skillEffect(self, SkillEffect(), p1, p2, false)
+end
+
+modApi:addWeapon_Texts({
+  Steel_Science_Confwell_Name = "Confuse Well",
+  Steel_Science_Confwell_Description = "Artillery weapon that confuses its target.",
+  Steel_Science_Confwell_Upgrade1 = "Time Confusion",
+  Steel_Science_Confwell_A_UpgradeDescription = "Causes the target to attack first."
+})
 
 Steel_Science_Confwell_Tip = Steel_Science_Confwell:new{
   TipImage = {
@@ -87,10 +114,6 @@ function Steel_Science_Confwell_Tip:GetSkillEffect(p1,p2)
   damage.sScript = "Board:GetPawn(Point(2,1)):FireWeapon(Point(2,2),1)"
   ret:AddDamage(damage)
   ret:AddDelay(1.5)
-  ret:AddBounce(p1, -2)
-  damage = SpaceDamage(p2, self.Damage, DIR_FLIP)
-  damage.bHide = true
-  damage.sAnimation = "ExploRepulse3"
-  ret:AddArtillery(damage, "effects/steel_shot_confuse.png")
+  skillEffect(self, ret, p1, p2, true)
   return ret
 end
