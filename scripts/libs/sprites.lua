@@ -1,6 +1,6 @@
 ------------------------------------------------------------------------------
 -- Sprite Loader Library
--- v1.0
+-- v1.1
 -- https://github.com/KnightMiner/ITB-KnightUtils/blob/master/libs/sprites.lua
 ------------------------------------------------------------------------------
 -- Contains helpers to load sprites and create animations

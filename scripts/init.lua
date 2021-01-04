@@ -68,19 +68,32 @@ function mod:init()
   sprites.addSprite("weapons", "steel_science_confwell")
   sprites.addSprite("weapons", "steel_grapple_fist")
   sprites.addSprite("weapons", "steel_ranged_cyclone")
+  sprites.addSprite("weapons", "steel_brute_harpoon")
   sprites.addSprite("effects", "steel_shot_confuse")
+  sprites.addSprite("effects", "steel_harpoon_grapple_R")
+  sprites.addSprite("effects", "steel_harpoon_grapple_U")
   sprites.addIcon("combat/icons", "steel_time_add_icon", Point(-10,22))
   sprites.addIcon("combat/icons", "steel_time_sub_icon", Point(-10,22))
   sprites.addIcon("combat/icons", "steel_no_time_icon", Point(-10,22))
   sprites.addMechs(
     {
       Name = "steel_grapple_mech",
-      Default =         { PosX = -17, PosY = -2 },
-      Animated =        { PosX = -17, PosY = -2, NumFrames = 4 },
-      Submerged =       { PosX = -17, PosY =  8 },
-      Broken =          { PosX = -17, PosY = -2 },
+      Default         = { PosX = -17, PosY = -2 },
+      Animated        = { PosX = -17, PosY = -2, NumFrames = 4 },
+      Submerged       = { PosX = -17, PosY =  8 },
+      Broken          = { PosX = -17, PosY = -2 },
       SubmergedBroken = { PosX = -14, PosY =  6 },
-      Icon =            {},
+      Icon            = {},
+    },
+    {
+      Name = "steel_harpoon_mech",
+      Default         = { PosX = -16, PosY =  8 },
+      Animated        = { PosX = -16, PosY =  8, NumFrames = 3 },
+      Submerged       = { PosX = -16, PosY = 12 },
+      Broken          = { PosX = -16, PosY =  8 },
+      SubmergedBroken = { PosX = -16, PosY = 12 },
+      Icon            = {},
+    },
     {
       Name = "steel_cyclone_mech",
       Default         = { PosX = -18, PosY = -5 },
@@ -92,55 +105,41 @@ function mod:init()
     },
     {
       Name = "steel_mech_confuse",
-      Default =         { PosX = -20, PosY = -1 },
-      Animated =        { PosX = -20, PosY = -1, NumFrames = 4 },
-      Submerged =       { PosX = -22, PosY =  8 },
-      Broken =          { PosX = -20, PosY =  1 },
+      Default         = { PosX = -20, PosY = -1 },
+      Animated        = { PosX = -20, PosY = -1, NumFrames = 4 },
+      Submerged       = { PosX = -22, PosY =  8 },
+      Broken          = { PosX = -20, PosY =  1 },
       SubmergedBroken = { PosX = -19, PosY = 10 },
-      Icon =            {},
+      Icon            = {},
     }
   )
 
   -- squad weapons
   self:loadScript("skills/grapple")
   self:loadScript("skills/cyclone")
+  self:loadScript("skills/harpoon")
   self:loadScript("skills/confuse")
   -- judoka tweaks
   judoShifts = self:loadScript("skills/judo")
   self:loadScript("skills/gravity")
 
-  -- shop
-  self.shop = self:loadScript("libs/shop")
-  self.shop:addWeapon({
-    id = "Steel_Grapple_Fist",
-    name = "Grapple Fist shop",
-    desc = "Add Confuse Mech's weapon to the store."
-  })
-  self.shop:addWeapon({
-    id = "Steel_Ranged_Cyclone",
-    name = "Cyclone Artillery shop",
-    desc = "Add Cyclone Mech's weapon to the store."
-  })
-  self.shop:addWeapon({
-    id = "Steel_Science_Confwell",
-    name = "Confuse Well shop",
-    desc = "Add Confuse Mech's weapon to the store."
-  })
-
+  -- add weapons to the shop
   -- fix the weapon texts for relevant weapons
-  for _, id in ipairs({"Steel_Grapple_Fist", "Steel_Ranged_Cyclone", "Steel_Science_Confwell"}) do
+  for _, id in ipairs({"Steel_Grapple_Fist", "Steel_Brute_Harpoon", "Steel_Ranged_Cyclone", "Steel_Science_Confwell"}) do
+    modApi:addWeaponDrop(id)
     fixWeaponTexts(id)
   end
 end
 
 function mod:load(options,version)
-  self.shop:load(options)
+  local squad = { "Steel Grapple", "SteelHarpoonMech", "SteelCycloneMech", "SteelConfMech" }
   modApi:addSquad(
-    { "Steel Grapple", "SteelGrappleMech", "DStrikeMech", "SteelConfMech" },
+    squad,
     "Steel Grapple",
     "These mechs behave similarly to Steel Judoka, providing an alternative flavor to the classic squad.",
     self.resourcePath.."img/icon.png"
   )
+  table.insert(squad, "SteelGrappleMech")
 
   --[[ Grapple Mech ]]--
   -- grapple rock throw just needs to update tooltips

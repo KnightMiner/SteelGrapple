@@ -13,10 +13,10 @@ weapons.rock.Prime_Shift = Prime_Shift:new{
 	TipImage = {
 		Unit          = Point(2,2),
 		Enemy         = Point(2,1),
-		Target        = Point(2,3),
+		Target        = Point(2,1),
 		Mountain      = Point(1,2),
 		Second_Origin = Point(2,2),
-		Second_Target = Point(3,2)
+		Second_Target = Point(1,2)
 	}
 }
 weapons.rock.Prime_Shift_A = weapons.rock.Prime_Shift:new{
@@ -61,7 +61,7 @@ function weapons.rock.Prime_Shift:GetSkillEffect(p1, p2)
 		-- toss rock to target
 		local rock = SpaceDamage(target, 0)
 		rock.sPawn = "RockThrown"
-		ret:AddArtillery(p2, rock, FULL_DELAY)
+		ret:AddArtillery(p2, rock, "effects/shotdown_rock.png", FULL_DELAY)
 		ret:AddBounce(target, 3)
 		ret:AddSound("/impact/dynamic/rock")
 	else
