@@ -65,10 +65,10 @@ end
 function mod:init()
   -- sprites
   local sprites = self:loadScript("libs/sprites")
-  sprites.addSprite("weapons", "steel_science_confwell")
   sprites.addSprite("weapons", "steel_grapple_fist")
-  sprites.addSprite("weapons", "steel_ranged_cyclone")
   sprites.addSprite("weapons", "steel_brute_harpoon")
+  sprites.addSprite("weapons", "steel_ranged_vortex")
+  sprites.addSprite("weapons", "steel_science_confwell")
   sprites.addSprite("effects", "steel_shot_confuse")
   sprites.addSprite("effects", "steel_harpoon_grapple_R")
   sprites.addSprite("effects", "steel_harpoon_grapple_U")
@@ -95,7 +95,7 @@ function mod:init()
       Icon            = {},
     },
     {
-      Name = "steel_cyclone_mech",
+      Name = "steel_vortex_mech",
       Default         = { PosX = -18, PosY = -5 },
       Animated        = { PosX = -18, PosY = -5, NumFrames = 4 },
       Submerged       = { PosX = -18, PosY =  8 },
@@ -116,8 +116,8 @@ function mod:init()
 
   -- squad weapons
   self:loadScript("skills/grapple")
-  self:loadScript("skills/cyclone")
   self:loadScript("skills/harpoon")
+  self:loadScript("skills/vortex")
   self:loadScript("skills/confuse")
   -- judoka tweaks
   judoShifts = self:loadScript("skills/judo")
@@ -125,14 +125,14 @@ function mod:init()
 
   -- add weapons to the shop
   -- fix the weapon texts for relevant weapons
-  for _, id in ipairs({"Steel_Grapple_Fist", "Steel_Brute_Harpoon", "Steel_Ranged_Cyclone", "Steel_Science_Confwell"}) do
+  for _, id in ipairs({"Steel_Grapple_Fist", "Steel_Brute_Harpoon", "Steel_Ranged_Vortex", "Steel_Science_Confwell"}) do
     modApi:addWeaponDrop(id)
     fixWeaponTexts(id)
   end
 end
 
 function mod:load(options,version)
-  local squad = { "Steel Grapple", "SteelHarpoonMech", "SteelCycloneMech", "SteelConfMech" }
+  local squad = { "Steel Grapple", "SteelHarpoonMech", "SteelVortexMech", "SteelConfMech" }
   modApi:addSquad(
     squad,
     "Steel Grapple",
